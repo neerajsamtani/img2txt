@@ -1,15 +1,20 @@
 'use client'
 
+import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useToast } from "@/hooks/use-toast"
 import { UpdateIcon } from "@radix-ui/react-icons"
 import Image from 'next/image'
-import { ChangeEvent, useState } from "react"
+import { ChangeEvent, useRef, useState } from "react"
 
 export default function Home() {
   const [files, setFiles] = useState<File[]>([])
   const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
   const [results, setResults] = useState<{ name: string; description: string }[]>([])
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const { toast } = useToast()
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || [])
@@ -32,6 +37,7 @@ export default function Home() {
 
   const handleConvert = async () => {
     setLoading(true);
+    setError(null);
     console.log('Processing files:', files);
 
     const formData = new FormData();
@@ -45,10 +51,19 @@ export default function Home() {
         body: formData,
       });
       const result = await response.json();
-      console.log('Response from server:', result);
-      setResults(result.results);
+
+      if (response.ok) {
+        setResults(result.results);
+        setFiles([]);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } else {
+        setError(result.error || 'An error occurred while processing your request.');
+      }
     } catch (error) {
       console.error('Error uploading files:', error);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -65,8 +80,9 @@ export default function Home() {
           Logout
         </Button>
       </div>
+      {error && <Alert variant="destructive">{error}</Alert>}
 
-      <main className="flex flex-col items-center justify-center gap-6 w-full max-w-md mx-auto flex-grow">
+      <main className="flex flex-col items-center justify-center gap-6 w-full max-w-3xl mx-auto flex-grow">
         <h1 className="text-3xl font-bold">Image to Text Converter</h1>
 
         <div className="grid w-full gap-4">
@@ -77,6 +93,7 @@ export default function Home() {
             className="cursor-pointer"
             multiple
             disabled={loading}
+            ref={fileInputRef}
           />
 
           {files.length > 0 && (
@@ -121,14 +138,20 @@ export default function Home() {
           {results.map((result, index) => (
             <div key={index} className="border p-4 rounded shadow">
               <h2 className="text-lg font-semibold">{result.name}</h2>
-              <p className="text-gray-700">
-                {result.description.split('\n').map((line, i) => (
-                  <span key={i}>
-                    {line}
-                    {i < result.description.split('\n').length - 1 && <br />}
-                  </span>
-                ))}
-              </p>
+              <pre className="text-gray-700 whitespace-pre-wrap">
+                {result.description}
+              </pre>
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(result.description);
+                  toast({
+                    title: 'Copied to clipboard',
+                  });
+                }}
+                className="mt-2"
+              >
+                Copy to Clipboard
+              </Button>
             </div>
           ))}
         </div>
