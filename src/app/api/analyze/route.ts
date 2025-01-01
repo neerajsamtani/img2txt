@@ -50,7 +50,7 @@ export async function POST(request: Request) {
                         content: [
                             {
                                 type: "text",
-                                text: "Transcribe the text in this image. Respect formatting and new lines. If it looks like a table, format it as a CSV. Do not include any other text or formatting like backticks or code blocks. Do not respond with anything else."
+                                text: "Transcribe the text in this image. Respect formatting and new lines. If it is a table, format it as a CSV. Do not include any other text or formatting like backticks or code blocks. Do not respond with anything else."
                             },
                             {
                                 type: "image_url",

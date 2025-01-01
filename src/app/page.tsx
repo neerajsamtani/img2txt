@@ -8,6 +8,9 @@ import { UpdateIcon } from "@radix-ui/react-icons"
 import Image from 'next/image'
 import { ChangeEvent, useRef, useState } from "react"
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+const MAX_TOTAL_SIZE = 20 * 1024 * 1024; // 20MB in bytes
+
 export default function Home() {
   const [files, setFiles] = useState<File[]>([])
   const [loading, setLoading] = useState<boolean>(false)
@@ -18,7 +21,29 @@ export default function Home() {
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || [])
-    setFiles(selectedFiles)
+
+    // Check individual file sizes
+    const oversizedFiles = selectedFiles.filter(file => file.size > MAX_FILE_SIZE)
+    if (oversizedFiles.length > 0) {
+      setError(`Some files are too large. Maximum size per file is ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    // Check total size
+    const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+    if (totalSize > MAX_TOTAL_SIZE) {
+      setError(`Total file size exceeds ${MAX_TOTAL_SIZE / (1024 * 1024)}MB limit`);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    setError(null);
+    setFiles(selectedFiles);
   }
 
   const handleLogout = async () => {
