@@ -63,7 +63,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error uploading files:', error);
-      setError('An unexpected error occurred. Please try again.');
+      setError(`An unexpected error occurred. Please try again. ${error}`);
     } finally {
       setLoading(false);
     }
