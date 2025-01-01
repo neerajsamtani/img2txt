@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { UpdateIcon } from "@radix-ui/react-icons"
 import Image from 'next/image'
 import { ChangeEvent, useState } from "react"
 
@@ -15,9 +16,57 @@ export default function Home() {
     setFiles(selectedFiles)
   }
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        window.location.reload() // Force a full page reload to trigger middleware
+      }
+    } catch (error) {
+      console.error('Error logging out:', error)
+    }
+  }
+
+  const handleConvert = async () => {
+    setLoading(true);
+    console.log('Processing files:', files);
+
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('images', file);
+    });
+
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        body: formData,
+      });
+      const result = await response.json();
+      console.log('Response from server:', result);
+      setResults(result.results);
+    } catch (error) {
+      console.error('Error uploading files:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-8">
-      <main className="flex flex-col items-center gap-6 w-full max-w-md">
+    <div className="min-h-screen flex flex-col p-8">
+      <div className="flex justify-end mb-8">
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="w-24"
+        >
+          Logout
+        </Button>
+      </div>
+
+      <main className="flex flex-col items-center justify-center gap-6 w-full max-w-md mx-auto flex-grow">
         <h1 className="text-3xl font-bold">Image to Text Converter</h1>
 
         <div className="grid w-full gap-4">
@@ -36,30 +85,9 @@ export default function Home() {
 
           <Button
             disabled={files.length === 0 || loading}
-            onClick={async () => {
-              setLoading(true);
-              console.log('Processing files:', files);
-
-              const formData = new FormData();
-              files.forEach(file => {
-                formData.append('images', file);
-              });
-
-              try {
-                const response = await fetch('/api/analyze', {
-                  method: 'POST',
-                  body: formData,
-                });
-                const result = await response.json();
-                console.log('Response from server:', result);
-                setResults(result.results);
-              } catch (error) {
-                console.error('Error uploading files:', error);
-              } finally {
-                setLoading(false);
-              }
-            }}
+            onClick={handleConvert}
           >
+            {loading ? <UpdateIcon className="mr-2 h-4 w-4 animate-spin" /> : null}
             {loading ? 'Converting...' : 'Convert Images'}
           </Button>
 
